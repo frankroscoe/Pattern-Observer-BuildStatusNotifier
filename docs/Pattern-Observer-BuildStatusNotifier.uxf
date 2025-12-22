@@ -1,0 +1,32 @@
+<diagram program="umletino" version="15.1"><zoom_level>10</zoom_level><element><id>UMLClass</id><coordinates><x>450</x><y>220</y><w>240</w><h>130</h></coordinates><panel_attributes>*BuildStatusNotifier*
+--
+- observers: List&lt;IBuildObserver&gt;
+- Status: string
+--
++ Attach(observer: IBuildObserver): void
++ Detach(observer: IBuildObserver): void
++ Notify( ): void
++ SetStatus(newStatus: string): void</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>230</x><y>30</y><w>260</w><h>90</h></coordinates><panel_attributes>&lt;&lt;interface&gt;&gt;
+*IBuildObserver*
+--
++ Update(status: string): void</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>60</x><y>400</y><w>190</w><h>50</h></coordinates><panel_attributes>*ConsoleLoggerObserver*
+--
++ Update(status: string): void</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLNote</id><coordinates><x>480</x><y>610</y><w>360</w><h>110</h></coordinates><panel_attributes>Legend
+-------------------------------------------------------------------------------
+◁  Hollow triangle — &lt;&lt;implements&gt;&gt; (interface realization)
+▶  Filled arrowhead — &lt;&lt;notifies&gt;&gt; (subject notifies observers)
+─  Solid line — Association
+Text labels (e.g., &lt;&lt;notifies&gt;&gt;) clarify relationship intent
+
+bg=#d3d3d3</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>580</x><y>30</y><w>240</w><h>90</h></coordinates><panel_attributes>&lt;&lt;interface&gt;&gt;
+*IBuildSubject*
+--
++ Attach(observer: IBuildObserver): void
++ Detach(observer: IBuildObserver): void
++ Notify( ): void</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>130</x><y>470</y><w>190</w><h>50</h></coordinates><panel_attributes>*FileLoggerObserver*
+--
++ Update(status: string): void</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>400</x><y>400</y><w>190</w><h>50</h></coordinates><panel_attributes>*EmailNotificationObserver*
+--
++ Update(status: string): void</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>340</x><y>470</y><w>190</w><h>50</h></coordinates><panel_attributes>*ChecklistVerificationObserver*
+--
++ Update(status: string): void</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>230</x><y>110</y><w>30</w><h>310</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>10;10;10;290</additional_attributes></element><element><id>Relation</id><coordinates><x>290</x><y>110</y><w>30</w><h>380</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>10;10;10;360</additional_attributes></element><element><id>Relation</id><coordinates><x>410</x><y>110</y><w>30</w><h>310</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>10;10;10;290</additional_attributes></element><element><id>Relation</id><coordinates><x>350</x><y>110</y><w>30</w><h>380</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>10;10;10;360</additional_attributes></element><element><id>Text</id><coordinates><x>480</x><y>160</y><w>70</w><h>30</h></coordinates><panel_attributes>&lt;&lt;notifies&gt;&gt;</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>470</x><y>110</y><w>30</w><h>130</h></coordinates><panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes><additional_attributes>10;10;10;110</additional_attributes></element><element><id>Relation</id><coordinates><x>650</x><y>110</y><w>30</w><h>130</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>10;10;10;110</additional_attributes></element></diagram>

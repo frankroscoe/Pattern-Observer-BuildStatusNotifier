@@ -1,0 +1,60 @@
+# Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+
+# Visual Studio 2015/2017 cache/options directory
+.vs/
+
+# Visual Studio Code workspace
+.vscode/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Mono
+mono_crash.*
+
+# Generated files
+Generated\ Files/
+
+# Backup & report files
+*.ncb
+*.opendb
+*.cachefile
+*.pdb
+*.mdb
+*.bak
+*.log
+*.tlog
+
+# Test results
+TestResults/
+
+# NuGet
+*.nupkg
+packages/
+.nuget/
+
+# Others
+*.dbmdl
+*.jfm
+*.psess
+*.vsp
+*.vspscc
+*.vssscc
+*.tmp
+*.temp
+*.svclog
+*.pidb
+*.scc
