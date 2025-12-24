@@ -1,4 +1,5 @@
-﻿using System;
+﻿using BuildStatusNotifierApp.Observers;
+using System;
 
 /// <summary>
 /// Entry point for the Build Status Notifier observer pattern demonstration.
@@ -14,8 +15,12 @@ class Program
         // Create the first observer
         ConsoleLoggerObserver consoleLogger = new ConsoleLoggerObserver();
 
-        // Attach the observer to the subject
+        // Create the second observer
+        FileLoggerObserver fileLogger = new FileLoggerObserver("Logs");
+
+        // Attach the observers to the subject
         notifier.Attach(consoleLogger);
+        notifier.Attach(fileLogger);
 
         // Execute the simulated build process
         notifier.SimulateBuild();
