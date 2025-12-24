@@ -1,35 +1,35 @@
 ﻿using BuildStatusNotifierApp.Observers;
 using System;
 
-/// <summary>
-/// Entry point for the Build Status Notifier observer pattern demonstration.
-/// Wires up the subject and observers, then simulates a build process.
-/// </summary>
-class Program
+namespace BuildStatusNotifierApp
 {
-    static void Main()
+    internal class Program
     {
-        // Create the subject (publisher)
-        BuildStatusNotifier notifier = new BuildStatusNotifier();
-
-        // Create the first observer
-        ConsoleLoggerObserver consoleLogger = new ConsoleLoggerObserver();
-
-        // Create the second observer
-        FileLoggerObserver fileLogger = new FileLoggerObserver("Logs");
-
-        // Attach the observers to the subject
-        notifier.Attach(consoleLogger);
-        notifier.Attach(fileLogger);
-
-        // Execute the simulated build process
-        notifier.SimulateBuild();
-
-        if (Environment.UserInteractive)
+        static void Main(string[] args)
         {
-            Console.WriteLine("Press any key to exit...");
-            Console.ReadKey();
-        }
+            // Create the subject (publisher)
+            BuildStatusNotifier notifier = new BuildStatusNotifier();
 
+            // Create the first observer
+            ConsoleLoggerObserver consoleLogger = new ConsoleLoggerObserver();
+
+            // Create the second observer
+            FileLoggerObserver fileLogger = new FileLoggerObserver("Logs");
+
+            // Attach the observers to the subject
+            notifier.Attach(consoleLogger);
+            notifier.Attach(fileLogger);
+
+            // Execute the simulated build process
+            notifier.SimulateBuild();
+
+            // Only pause when running interactively (local dev)
+            if (Environment.UserInteractive)
+            {
+                Console.WriteLine("Press any key to exit...");
+                Console.ReadKey();
+            }
+        }
     }
 }
+
