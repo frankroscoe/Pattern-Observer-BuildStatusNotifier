@@ -25,7 +25,11 @@ class Program
         // Execute the simulated build process
         notifier.SimulateBuild();
 
-        Console.WriteLine("Press any key to exit...");
-        Console.ReadKey();
+        if (Environment.UserInteractive)
+        {
+            Console.WriteLine("Press any key to exit...");
+            Console.ReadKey();
+        }
+
     }
 }
