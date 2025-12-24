@@ -1,0 +1,57 @@
+name: Log Management and Promotion
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build-run-promote:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Build project
+        run: dotnet build BuildStatusNotifierApp/BuildStatusNotifierApp.csproj --configuration Debug
+
+      - name: Run project to generate log
+        run: |
+          dotnet build BuildStatusNotifierApp/BuildStatusNotifierApp.csproj --configuration Debug --no-incremental
+          dotnet run --no-build --project BuildStatusNotifierApp/BuildStatusNotifierApp.csproj
+
+      - name: Promote newest log to tracked Logs folder
+        run: |
+          mkdir -p BuildStatusNotifierApp/Logs
+          NEWEST_LOG=$(ls -t BuildStatusNotifierApp/bin/Debug/net8.0/Logs/log_*.txt | head -n 1)
+          cp "$NEWEST_LOG" BuildStatusNotifierApp/Logs/latest_log.txt
+
+          echo "$(date '+%Y-%m-%d %H:%M:%S') - Promoted log file: $(basename "$NEWEST_LOG")" >> BuildStatusNotifierApp/Logs/automation_log.txt
+
+      - name: Archive logs older than 3 days
+        run: |
+          mkdir -p BuildStatusNotifierApp/Logs/archive
+          find BuildStatusNotifierApp/Logs -maxdepth 1 -name "log_*.txt" -mtime +3 -exec mv {} BuildStatusNotifierApp/Logs/archive/ \;
+
+          COUNT=$(find BuildStatusNotifierApp/Logs/archive -type f | wc -l)
+          echo "$(date '+%Y-%m-%d %H:%M:%S') - Archived $COUNT old logs" >> BuildStatusNotifierApp/Logs/automation_log.txt
+
+      - name: Delete archives older than 30 days
+        run: |
+          DELETED=$(find BuildStatusNotifierApp/Logs/archive -type f -mtime +30 | wc -l)
+          find BuildStatusNotifierApp/Logs/archive -type f -mtime +30 -delete
+
+          echo "$(date '+%Y-%m-%d %H:%M:%S') - Deleted $DELETED archived logs older than 30 days" >> BuildStatusNotifierApp/Logs/automation_log.txt
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add BuildStatusNotifierApp/Logs
+          git commit -m "Automated log promotion and maintenance" || echo "No changes to commit"
+          git push
