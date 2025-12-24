@@ -22,13 +22,7 @@ namespace BuildStatusNotifierApp
 
             // Execute the simulated build process
             notifier.SimulateBuild();
-
-            // Only pause when running interactively (local dev)
-            if (Environment.UserInteractive)
-            {
-                Console.WriteLine("Press any key to exit...");
-                Console.ReadKey();
-            }
+            
         }
     }
 }
