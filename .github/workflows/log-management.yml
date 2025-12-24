@@ -21,7 +21,9 @@ jobs:
         run: dotnet build BuildStatusNotifierApp/BuildStatusNotifierApp.csproj --configuration Debug
 
       - name: Run project to generate log
-        run: dotnet run --project BuildStatusNotifierApp/BuildStatusNotifierApp.csproj
+        run: |
+          dotnet build BuildStatusNotifierApp/BuildStatusNotifierApp.csproj --configuration Debug --no-incremental
+          dotnet run --no-build --project BuildStatusNotifierApp/BuildStatusNotifierApp.csproj
 
       - name: Promote newest log to tracked Logs folder
         run: |
