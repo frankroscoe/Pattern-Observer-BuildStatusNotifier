@@ -5,7 +5,7 @@ namespace BuildStatusNotifierApp
 {
     /// <summary>
     /// Entry point for the Build Status Notifier demonstration.
-    /// 
+    ///
     /// This class intentionally keeps orchestration logic minimal so the focus
     /// remains on illustrating the Observer pattern in a clean, instructional way.
     /// 
