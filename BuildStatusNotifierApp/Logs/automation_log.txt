@@ -1,0 +1,3 @@
+2025-12-31 19:51:20 - Promoted log file: log_20251231.txt
+2025-12-31 19:51:20 - Archived 0 old logs
+2025-12-31 19:51:20 - Deleted 0 archived logs older than 30 days
