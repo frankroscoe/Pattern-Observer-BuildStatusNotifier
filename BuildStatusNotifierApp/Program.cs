@@ -14,7 +14,7 @@ namespace BuildStatusNotifierApp
             ConsoleLoggerObserver consoleLogger = new ConsoleLoggerObserver();
 
             // Create the second observer
-            FileLoggerObserver fileLogger = new FileLoggerObserver("Logs");
+            FileLoggerObserver fileLogger = new FileLoggerObserver(Paths.LogDirectory);
 
             // Attach the observers to the subject
             notifier.Attach(consoleLogger);
