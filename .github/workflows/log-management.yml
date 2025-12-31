@@ -21,6 +21,7 @@ jobs:
         run: dotnet build BuildStatusNotifierApp/BuildStatusNotifierApp.csproj --configuration Debug
 
       - name: Run project to generate log
+        working-directory: BuildStatusNotifierApp
         run: |
           dotnet build BuildStatusNotifierApp/BuildStatusNotifierApp.csproj --configuration Debug --no-incremental
           dotnet run --no-build --project BuildStatusNotifierApp/BuildStatusNotifierApp.csproj
