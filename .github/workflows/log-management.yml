@@ -25,10 +25,10 @@ jobs:
           dotnet build BuildStatusNotifierApp/BuildStatusNotifierApp.csproj --configuration Debug --no-incremental
           dotnet run --no-build --project BuildStatusNotifierApp/BuildStatusNotifierApp.csproj
 
-      - name: Promote newest log to tracked Logs folder
+      - name: Promote newest log to tracked Logs folder            
         run: |
           mkdir -p BuildStatusNotifierApp/Logs
-          NEWEST_LOG=$(ls -t BuildStatusNotifierApp/bin/Debug/net8.0/Logs/log_*.txt | head -n 1)
+          NEWEST_LOG=$(ls -t BuildStatusNotifierApp/Logs/log_*.txt | head -n 1)
           cp "$NEWEST_LOG" BuildStatusNotifierApp/Logs/latest_log.txt
 
           echo "$(date '+%Y-%m-%d %H:%M:%S') - Promoted log file: $(basename "$NEWEST_LOG")" >> BuildStatusNotifierApp/Logs/automation_log.txt
