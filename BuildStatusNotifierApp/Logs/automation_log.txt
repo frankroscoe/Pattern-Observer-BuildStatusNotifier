@@ -1,3 +1,6 @@
+2026-01-01 17:23:23 - Deleted 0 archived logs older than 30 days
+2026-01-01 17:23:23 - Archived 0 old logs
+2026-01-01 17:23:23 - Promoted log file: log_20260101_014045.txt
 2026-01-01 15:58:54 - Deleted 0 archived logs older than 30 days
 2026-01-01 15:58:54 - Archived 0 old logs
 2026-01-01 15:58:54 - Promoted log file: log_20251231.txt
