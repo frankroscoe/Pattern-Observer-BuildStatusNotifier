@@ -1,86 +1,84 @@
 using System;
 using System.IO;
+using BuildStatusNotifierApp.Interfaces;
 
 namespace BuildStatusNotifierApp.Observers
 {
     /// <summary>
-    /// FileLoggerObserver is a concrete Observer in the Observer Pattern.
+    /// A concrete Observer in the Observer Pattern.
     /// 
-    /// ROLE IN THE PATTERN:
-    /// ---------------------
-    /// - The Subject (BuildStatusNotifier) calls Update(...) on all registered observers.
-    /// - This observer responds by writing each status update to a log file.
-    /// 
-    /// EDUCATIONAL PURPOSE:
-    /// ---------------------
-    /// This class demonstrates how an Observer can perform a *side effect* (file I/O)
-    /// in response to notifications. It also models:
-    ///   � Constructor injection for configuration (log directory)
-    ///   � Safe directory creation
-    ///   � Timestamped log entries
-    ///   � Daily log file rotation using date-based filenames
-    /// 
-    /// This mirrors real-world logging frameworks and helps students understand how
-    /// the Observer Pattern can be used to decouple event generation from event handling.
+    /// This class listens for build status updates and writes them to a
+    /// timestamped log file. It is intentionally designed to be:
+    ///   • Educational (clear, explicit, well‑commented)
+    ///   • Operationally mature (timestamped filenames, UTC, run boundaries)
+    ///   • Portfolio‑ready (clean formatting, reproducible behavior)
     /// </summary>
     public class FileLoggerObserver : IBuildObserver
     {
-        // Directory where log files will be written.
-        // Using a readonly field reinforces that this value is fixed after construction.
         private readonly string _logDirectory;
+        private readonly string _logFilePath;
 
         /// <summary>
-        /// Constructor accepts the directory where log files should be stored.
-        /// 
-        /// WHY THIS MATTERS:
-        /// ------------------
-        /// - The Subject should not decide where logs go; that is the Observer's concern.
-        /// - Constructor injection keeps the class flexible and testable.
-        /// - Ensuring the directory exists prevents runtime exceptions during logging.
+        /// Constructor.
+        /// Creates a new timestamped log file for the current run and writes
+        /// a header row plus a START‑OF‑RUN marker.
         /// </summary>
         public FileLoggerObserver(string logDirectory)
         {
             _logDirectory = logDirectory;
 
-            // Ensure the directory exists before writing any files.
-            // This makes the observer self-contained and robust.
-            if (!Directory.Exists(_logDirectory))
+            // Ensure the Logs directory exists. This makes the class robust
+            // when running in CI/CD environments where folders may not exist.
+            Directory.CreateDirectory(_logDirectory);
+
+            // Create a filename with both date and time to avoid collisions.
+            // Example: log_20251231_154210.txt
+            string timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
+            string fileName = $"log_{timestamp}.txt";
+
+            _logFilePath = Path.Combine(_logDirectory, fileName);
+
+            // Write a header row and a START‑OF‑RUN marker.
+            // This makes the log self‑documenting and easy to read.
+            using (StreamWriter writer = new StreamWriter(_logFilePath, append: true))
             {
-                Directory.CreateDirectory(_logDirectory);
+                writer.WriteLine("# Timestamp (UTC), Message");
+                writer.WriteLine("------------------------------------------------------------");
+                writer.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC, START OF RUN");
+                writer.WriteLine("------------------------------------------------------------");
+                writer.Flush();
             }
         }
 
         /// <summary>
         /// Called by the Subject whenever a new build status message is available.
-        /// 
-        /// BEHAVIOR:
-        /// ---------
-        /// - Appends the message to a daily log file.
-        /// - Each entry is timestamped for chronological review.
-        /// - A new file is created automatically if it does not exist.
-        /// 
-        /// This demonstrates how Observers can react to events without the Subject
-        /// needing to know *how* the reaction is implemented.
+        /// Each message is appended to the log with a precise UTC timestamp.
         /// </summary>
-        public void Update(string status)
+        public void Update(string message)
         {
-            // Build a filename based on the current date.
-            // Example: log_20251222.txt
-            string filePath = Path.Combine(
-                _logDirectory,
-                "log_" + DateTime.Now.ToString("yyyyMMdd") + ".txt"
-            );
+            using (StreamWriter writer = new StreamWriter(_logFilePath, append: true))
+            {
+                writer.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC, {message}");
+                writer.Flush(); // Ensures log integrity even if the process exits abruptly
+            }
+        }
 
-            // Format a single log entry with a timestamp.
-            string logEntry =
-                DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") +
-                " - " +
-                status +
-                Environment.NewLine;
-
-            // Append the entry to the file.
-            // If the file does not exist, AppendAllText creates it automatically.
-            File.AppendAllText(filePath, logEntry);
+        /// <summary>
+        /// Optional lifecycle hook.
+        /// Call this at the end of the build/test pipeline to clearly mark the
+        /// end of a run. This is especially useful when multiple runs occur
+        /// in the same CI/CD session.
+        /// </summary>
+        public void EndRun()
+        {
+            using (StreamWriter writer = new StreamWriter(_logFilePath, append: true))
+            {
+                writer.WriteLine("------------------------------------------------------------");
+                writer.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC, END OF RUN");
+                writer.WriteLine("============================================================");
+                writer.WriteLine(); // Blank line before next run (if any)
+                writer.Flush();
+            }
         }
     }
 }

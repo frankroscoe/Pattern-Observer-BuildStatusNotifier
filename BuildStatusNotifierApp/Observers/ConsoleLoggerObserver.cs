@@ -1,13 +1,35 @@
 ﻿using System;
+using BuildStatusNotifierApp.Interfaces;
 
-/// <summary>
-/// Observer that logs build status updates to the console.
-/// Demonstrates a simple, real-time reaction to build status changes.
-/// </summary>
-public class ConsoleLoggerObserver : IBuildObserver
+namespace BuildStatusNotifierApp.Observers
 {
-    public void Update(string status)
+    /// <summary>
+    /// A concrete Observer in the Observer Pattern.
+    ///
+    /// This observer writes build status updates directly to the console.
+    /// It represents a real-time, developer-facing output stream—similar to
+    /// what you would see in a terminal, CI/CD dashboard, or build monitor.
+    ///
+    /// Educational goals of this class:
+    ///   • Demonstrate how observers react independently to Subject updates
+    ///   • Show how multiple observers can coexist without coupling
+    ///   • Provide a simple, visible output mechanism for teaching the pattern
+    /// </summary>
+    public class ConsoleLoggerObserver : IBuildObserver
     {
-        Console.WriteLine($"[Console Logger] {status}");
+        /// <summary>
+        /// Called by the Subject (publisher) whenever the build status changes.
+        /// This method simply writes the status message to the console.
+        ///
+        /// In a real system, this could represent:
+        ///   • A live build monitor
+        ///   • A developer console
+        ///   • A CI/CD pipeline log stream
+        /// </summary>
+        /// <param name="status">The build status message sent by the Subject.</param>
+        public void Update(string status)
+        {
+            Console.WriteLine(status);
+        }
     }
 }

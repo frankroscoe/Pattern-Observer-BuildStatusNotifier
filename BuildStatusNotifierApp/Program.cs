@@ -1,5 +1,7 @@
-﻿using BuildStatusNotifierApp.Observers;
-using System;
+﻿using System;
+using BuildStatusNotifierApp.Config;
+using BuildStatusNotifierApp.Observers;
+using BuildStatusNotifierApp.Subject;
 
 namespace BuildStatusNotifierApp
 {
@@ -8,13 +10,13 @@ namespace BuildStatusNotifierApp
     ///
     /// This class intentionally keeps orchestration logic minimal so the focus
     /// remains on illustrating the Observer pattern in a clean, instructional way.
-    /// 
+    ///
     /// Responsibilities of this file:
     /// - Instantiate the concrete Subject (BuildStatusNotifier)
     /// - Instantiate one or more Observers
     /// - Register Observers with the Subject
     /// - Trigger a simulated build pipeline to demonstrate event notifications
-    /// 
+    ///
     /// This mirrors real-world CI/CD systems where multiple independent components
     /// react to build events (logging, notifications, dashboards, etc.) without
     /// the build engine needing to know who is listening.
@@ -46,6 +48,11 @@ namespace BuildStatusNotifierApp
             // Each stage of the build will notify all observers, allowing them
             // to react independently according to their own responsibilities.
             notifier.SimulateBuild();
+
+            // Mark the end of the run in the file-based log.
+            // This produces a clean END-OF-RUN boundary in the log file,
+            // improving readability and making each run self-contained.
+            fileLogger.EndRun();
         }
     }
 }
