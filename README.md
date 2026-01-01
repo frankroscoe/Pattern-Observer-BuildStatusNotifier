@@ -77,6 +77,18 @@ A GitHub Actions workflow automatically:
 
 This models operational hygiene and artifact lifecycle management in CI/CD systems.
 
+### **Scheduled Daily Maintenance (GitHub Actions)**
+
+A second GitHub Actions workflow performs lightweight daily maintenance to keep the repository healthy over time.  
+This scheduled job:
+
+- Appends a daily audit entry to `automation_log.txt`  
+- Enforces a retention policy (keeps the **last 10** timestamped logs)  
+- Trims `automation_log.txt` if it grows beyond a safe threshold  
+- Ensures all maintenance actions are fully visible and never destructive  
+
+This models real‑world scheduled automation, log rotation, and operational hygiene while preserving the educational value of the repository.
+
 ---
 
 ## Repository Structure
@@ -102,6 +114,7 @@ Pattern-Observer-BuildStatusNotifier/
 ├── .github/
 │   └── workflows/
 │       └── log-management.yml
+│       └── daily-maintenance.yml
 ├── docs/
 │   └── Pattern-Observer-BuildStatusNotifier.png
 └── README.md

@@ -1,0 +1,121 @@
+---
+# ================================================================
+#  Daily Maintenance Workflow
+#  ---------------------------------------------------------------
+#  This scheduled workflow performs lightweight, non-destructive
+#  maintenance to keep the repository healthy over time.
+#
+#  It demonstrates:
+#    • Scheduled automation (cron)
+#    • Log retention policies
+#    • Safe trimming of growing files
+#    • Full audit visibility in automation_log.txt
+#
+#  This file is intentionally written as a teaching artifact.
+# ================================================================
+
+name: Daily Maintenance
+
+on:
+  # Run once per day at 00:00 UTC.
+  schedule:
+    - cron: "0 0 * * *"
+
+  # Allow manual execution for testing.
+  workflow_dispatch:
+
+jobs:
+  daily-maintenance:
+    runs-on: ubuntu-latest
+
+    steps:
+      # ------------------------------------------------------------
+      # 1. Checkout repository
+      # ------------------------------------------------------------
+      # Required so the workflow can inspect and modify log files.
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ------------------------------------------------------------
+      # 2. Ensure Logs directory exists
+      # ------------------------------------------------------------
+      # This protects the workflow from failing if the repo is new
+      # or if logs have not yet been generated.
+      - name: Ensure Logs directory exists
+        working-directory: BuildStatusNotifierApp
+        run: mkdir -p Logs
+
+      # ------------------------------------------------------------
+      # 3. Retain only the last 10 timestamped logs
+      # ------------------------------------------------------------
+      # This prevents unbounded growth while preserving recent runs.
+      # The workflow:
+      #   • Lists all log_*.txt files sorted by newest first
+      #   • Keeps the first 10
+      #   • Deletes the rest
+      #   • Logs the number deleted
+      - name: Retain last 10 logs
+        working-directory: BuildStatusNotifierApp
+        run: |
+          LOGS=$(ls -t Logs/log_*.txt 2>/dev/null || true)
+          COUNT=$(echo "$LOGS" | wc -l)
+          if [ "$COUNT" -gt 10 ]; then
+            TO_DELETE=$(echo "$LOGS" | tail -n +11)
+            echo "$TO_DELETE" | xargs rm -f
+            DELETED=$(echo "$TO_DELETE" | wc -l)
+            echo "$(date '+%Y-%m-%d %H:%M:%S') - Deleted $DELETED old logs (retention: last 10 kept)" >> Logs/automation_log.txt
+          else
+            echo "$(date '+%Y-%m-%d %H:%M:%S') - No log deletion required (count: $COUNT)" >> Logs/automation_log.txt
+          fi
+
+      # ------------------------------------------------------------
+      # 4. Trim automation_log.txt if it grows too large
+      # ------------------------------------------------------------
+      # This file grows indefinitely as workflows append entries.
+      # To prevent runaway growth:
+      #   • If > 5000 lines, keep only the newest 4800
+      #   • Log the trimming action
+      #
+      # This models real-world log rotation while preserving history.
+      - name: Trim automation_log.txt if needed
+        working-directory: BuildStatusNotifierApp
+        run: |
+          LOG_FILE="Logs/automation_log.txt"
+          touch "$LOG_FILE"
+          LINE_COUNT=$(wc -l < "$LOG_FILE")
+          MAX_LINES=5000
+          KEEP_LINES=4800
+
+          if [ "$LINE_COUNT" -gt "$MAX_LINES" ]; then
+            TAIL_TMP=$(mktemp)
+            tail -n "$KEEP_LINES" "$LOG_FILE" > "$TAIL_TMP"
+            mv "$TAIL_TMP" "$LOG_FILE"
+            echo "$(date '+%Y-%m-%d %H:%M:%S') - Trimmed automation_log.txt from $LINE_COUNT to $KEEP_LINES lines" >> "$LOG_FILE"
+          else
+            echo "$(date '+%Y-%m-%d %H:%M:%S') - automation_log.txt within size limits ($LINE_COUNT lines)" >> "$LOG_FILE"
+          fi
+
+      # ------------------------------------------------------------
+      # 5. Append daily audit entry
+      # ------------------------------------------------------------
+      # Even if no actions were required, the workflow logs a
+      # heartbeat entry to demonstrate scheduled automation.
+      - name: Append daily audit entry
+        working-directory: BuildStatusNotifierApp
+        run: |
+          echo "$(date '+%Y-%m-%d %H:%M:%S') - Daily maintenance run completed" >> Logs/automation_log.txt
+
+      # ------------------------------------------------------------
+      # 6. Commit and push changes
+      # ------------------------------------------------------------
+      # Any log deletions, trims, or audit entries are committed
+      # back to the repository. If nothing changed, the commit
+      # step safely no-ops.
+      - name: Commit and push changes
+        working-directory: BuildStatusNotifierApp
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add Logs
+          git commit -m "Daily maintenance: retention, trimming, audit entry" || echo "No changes to commit"
+          git push

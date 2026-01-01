@@ -1,7 +1,24 @@
+# ================================================================
+#  Log Management and Promotion Workflow
+#  ---------------------------------------------------------------
+#  This workflow demonstrates operational hygiene in CI/CD:
+#    • Build and run the application to generate a fresh log file
+#    • Promote the newest log to a stable, tracked location
+#    • Maintain an automation audit trail
+#    • Archive older logs and prune stale archives
+#
+#  This file is intentionally written as a teaching artifact.
+#  Every step includes commentary explaining the rationale,
+#  mirroring real-world engineering practices.
+# ================================================================
+
 name: Log Management and Promotion
 
 on:
+  # Trigger whenever code is pushed to the repository.
   push:
+
+  # Allow manual execution from the GitHub Actions UI.
   workflow_dispatch:
 
 jobs:
@@ -9,33 +26,56 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # ------------------------------------------------------------
+      # 1. Checkout repository
+      # ------------------------------------------------------------
+      # Pulls the repository contents into the runner so the workflow
+      # can build, run, and modify files (such as logs).
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # ------------------------------------------------------------
+      # 2. Install .NET SDK
+      # ------------------------------------------------------------
+      # Ensures the runner has the correct .NET version to build and
+      # execute the application. Using a pinned major version (8.x)
+      # provides stability while still receiving patch updates.
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
 
-      # -------------------------------
-      # Build the application
-      # -------------------------------
+      # ------------------------------------------------------------
+      # 3. Build the application
+      # ------------------------------------------------------------
+      # A clean build validates that the code compiles successfully.
+      # This mirrors the "build" stage of a real CI pipeline.
       - name: Build project
         working-directory: BuildStatusNotifierApp
         run: dotnet build BuildStatusNotifierApp.csproj --configuration Debug
 
-      # -------------------------------
-      # Run the application to generate a new log file
-      # -------------------------------
+      # ------------------------------------------------------------
+      # 4. Run the application to generate a new log file
+      # ------------------------------------------------------------
+      # Running the app triggers the Observer pattern and produces a
+      # timestamped log file. The --no-incremental flag ensures a
+      # deterministic build, which is important for teaching and CI.
       - name: Run project to generate log
         working-directory: BuildStatusNotifierApp
         run: |
           dotnet build BuildStatusNotifierApp.csproj --configuration Debug --no-incremental
           dotnet run --no-build --project BuildStatusNotifierApp.csproj
 
-      # -------------------------------
-      # Promote newest log to tracked Logs folder
-      # -------------------------------
+      # ------------------------------------------------------------
+      # 5. Promote newest log to a stable tracked file
+      # ------------------------------------------------------------
+      # The application generates timestamped logs (log_YYYYMMDD_HHMMSS.txt).
+      # This step:
+      #   • Identifies the newest log
+      #   • Copies it to latest_log.txt (a stable reference point)
+      #   • Appends an entry to automation_log.txt for traceability
+      #
+      # This models real-world artifact promotion in CI/CD systems.
       - name: Promote newest log to tracked Logs folder
         working-directory: BuildStatusNotifierApp
         run: |
@@ -44,9 +84,11 @@ jobs:
           cp "$NEWEST_LOG" Logs/latest_log.txt
           echo "$(date '+%Y-%m-%d %H:%M:%S') - Promoted log file: $(basename "$NEWEST_LOG")" >> Logs/automation_log.txt
 
-      # -------------------------------
-      # Archive logs older than 3 days
-      # -------------------------------
+      # ------------------------------------------------------------
+      # 6. Archive logs older than 3 days
+      # ------------------------------------------------------------
+      # Moves older timestamped logs into Logs/archive/ to keep the
+      # main Logs folder clean. This models log rotation practices.
       - name: Archive logs older than 3 days
         working-directory: BuildStatusNotifierApp
         run: |
@@ -55,9 +97,11 @@ jobs:
           COUNT=$(find Logs/archive -type f | wc -l)
           echo "$(date '+%Y-%m-%d %H:%M:%S') - Archived $COUNT old logs" >> Logs/automation_log.txt
 
-      # -------------------------------
-      # Delete archives older than 30 days
-      # -------------------------------
+      # ------------------------------------------------------------
+      # 7. Delete archives older than 30 days
+      # ------------------------------------------------------------
+      # Prevents unbounded growth of the archive folder. This mirrors
+      # retention policies used in production systems.
       - name: Delete archives older than 30 days
         working-directory: BuildStatusNotifierApp
         run: |
@@ -65,9 +109,15 @@ jobs:
           find Logs/archive -type f -mtime +30 -delete
           echo "$(date '+%Y-%m-%d %H:%M:%S') - Deleted $DELETED archived logs older than 30 days" >> Logs/automation_log.txt
 
-      # -------------------------------
-      # Commit and push log changes
-      # -------------------------------
+      # ------------------------------------------------------------
+      # 8. Commit and push log changes
+      # ------------------------------------------------------------
+      # This step:
+      #   • Stages the updated Logs folder
+      #   • Commits changes (if any)
+      #   • Pushes them back to the same branch
+      #
+      # This demonstrates how CI/CD can maintain runtime artifacts.
       - name: Commit and push changes
         working-directory: BuildStatusNotifierApp
         run: |
