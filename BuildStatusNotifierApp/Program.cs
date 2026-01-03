@@ -1,26 +1,58 @@
 ﻿using System;
+using BuildStatusNotifierApp.Config;
+using BuildStatusNotifierApp.Observers;
+using BuildStatusNotifierApp.Subject;
 
-/// <summary>
-/// Entry point for the Build Status Notifier observer pattern demonstration.
-/// Wires up the subject and observers, then simulates a build process.
-/// </summary>
-class Program
+namespace BuildStatusNotifierApp
 {
-    static void Main()
+    /// <summary>
+    /// Entry point for the Build Status Notifier demonstration.
+    ///
+    /// This class intentionally keeps orchestration logic minimal so the focus
+    /// remains on illustrating the Observer pattern in a clean, instructional way.
+    ///
+    /// Responsibilities of this file:
+    /// - Instantiate the concrete Subject (BuildStatusNotifier)
+    /// - Instantiate one or more Observers
+    /// - Register Observers with the Subject
+    /// - Trigger a simulated build pipeline to demonstrate event notifications
+    ///
+    /// This mirrors real-world CI/CD systems where multiple independent components
+    /// react to build events (logging, notifications, dashboards, etc.) without
+    /// the build engine needing to know who is listening.
+    /// </summary>
+    internal class Program
     {
-        // Create the subject (publisher)
-        BuildStatusNotifier notifier = new BuildStatusNotifier();
+        static void Main(string[] args)
+        {
+            // Instantiate the Subject (publisher) responsible for broadcasting
+            // build lifecycle events to all registered observers.
+            BuildStatusNotifier notifier = new BuildStatusNotifier();
 
-        // Create the first observer
-        ConsoleLoggerObserver consoleLogger = new ConsoleLoggerObserver();
+            // Observer #1: Writes build events to the console.
+            // This models a real-time, developer-facing output stream.
+            ConsoleLoggerObserver consoleLogger = new ConsoleLoggerObserver();
 
-        // Attach the observer to the subject
-        notifier.Attach(consoleLogger);
+            // Observer #2: Persists build events to disk.
+            // This models durable logging used in CI/CD pipelines for auditing,
+            // troubleshooting, and post-build analysis.
+            FileLoggerObserver fileLogger = new FileLoggerObserver(Paths.LogDirectory);
 
-        // Execute the simulated build process
-        notifier.SimulateBuild();
+            // Register both observers with the Subject.
+            // The Subject remains unaware of the observers' concrete types,
+            // demonstrating loose coupling and extensibility.
+            notifier.Attach(consoleLogger);
+            notifier.Attach(fileLogger);
 
-        Console.WriteLine("Press any key to exit...");
-        Console.ReadKey();
+            // Trigger a simulated build pipeline.
+            // Each stage of the build will notify all observers, allowing them
+            // to react independently according to their own responsibilities.
+            notifier.SimulateBuild();
+
+            // Mark the end of the run in the file-based log.
+            // This produces a clean END-OF-RUN boundary in the log file,
+            // improving readability and making each run self-contained.
+            fileLogger.EndRun();
+        }
     }
 }

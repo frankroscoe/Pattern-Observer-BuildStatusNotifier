@@ -1,11 +1,17 @@
-﻿/// <summary> 
-/// Defines the contract for all observers in the Observer pattern.
-/// Any class that wants to receive build status updates must implement this interface.
-/// </summary>
-public interface IBuildObserver
+﻿namespace BuildStatusNotifierApp.Interfaces
 {
-    /// <summary> 
-    /// Called by the subject (publisher) whenever the build status changes.
+    /// <summary>
+    /// Represents an Observer in the Observer pattern.
+    /// 
+    /// Any class that wants to receive build status updates must implement
+    /// this interface. The Subject calls <see cref="Update"/> whenever its
+    /// state changes.
     /// </summary>
-    void Update(string status);
+    public interface IBuildObserver
+    {
+        /// <summary>
+        /// Called by the Subject (publisher) whenever the build status changes.
+        /// </summary>
+        void Update(string status);
+    }
 }

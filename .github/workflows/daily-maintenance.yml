@@ -1,0 +1,102 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+# ================================================================
+#  Daily Maintenance Workflow
+#  ---------------------------------------------------------------
+#  This scheduled workflow performs lightweight, non-destructive
+#  maintenance to keep the repository healthy over time.
+#
+#  It demonstrates:
+#    • Scheduled automation (cron, runs in UTC)
+#    • Log retention policies
+#    • Safe trimming of growing files
+#    • Full audit visibility (newest-first)
+# ================================================================
+
+name: Daily Maintenance
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+
+jobs:
+  daily-maintenance:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Ensure Logs directory exists
+        working-directory: BuildStatusNotifierApp
+        run: mkdir -p Logs
+
+      # ------------------------------------------------------------
+      # Retain only the last 10 timestamped logs
+      # ------------------------------------------------------------
+      - name: Retain last 10 logs
+        working-directory: BuildStatusNotifierApp
+        run: |
+          LOGS=$(ls -t Logs/log_*.txt 2>/dev/null || true)
+          COUNT=$(echo "$LOGS" | wc -l)
+
+          if [ "$COUNT" -gt 10 ]; then
+            TO_DELETE=$(echo "$LOGS" | tail -n +11)
+            echo "$TO_DELETE" | xargs rm -f
+            DELETED=$(echo "$TO_DELETE" | wc -l)
+
+            # Prepend audit entry
+            echo "$(date '+%Y-%m-%d %H:%M:%S') - Deleted $DELETED old logs (retention: last 10 kept)" \
+              | cat - Logs/automation_log.txt > Logs/tmp && mv Logs/tmp Logs/automation_log.txt
+          else
+            echo "$(date '+%Y-%m-%d %H:%M:%S') - No log deletion required (count: $COUNT)" \
+              | cat - Logs/automation_log.txt > Logs/tmp && mv Logs/tmp Logs/automation_log.txt
+          fi
+
+      # ------------------------------------------------------------
+      # Trim automation_log.txt if it grows too large
+      # ------------------------------------------------------------
+      - name: Trim automation_log.txt if needed
+        working-directory: BuildStatusNotifierApp
+        run: |
+          LOG_FILE="Logs/automation_log.txt"
+          touch "$LOG_FILE"
+
+          LINE_COUNT=$(wc -l < "$LOG_FILE")
+          MAX_LINES=5000
+          KEEP_LINES=4800
+
+          if [ "$LINE_COUNT" -gt "$MAX_LINES" ]; then
+            TAIL_TMP=$(mktemp)
+            tail -n "$KEEP_LINES" "$LOG_FILE" > "$TAIL_TMP"
+            mv "$TAIL_TMP" "$LOG_FILE"
+
+            # Prepend audit entry
+            echo "$(date '+%Y-%m-%d %H:%M:%S') - Trimmed automation_log.txt from $LINE_COUNT to $KEEP_LINES lines" \
+              | cat - Logs/automation_log.txt > Logs/tmp && mv Logs/tmp Logs/automation_log.txt
+          else
+            echo "$(date '+%Y-%m-%d %H:%M:%S') - automation_log.txt within size limits ($LINE_COUNT lines)" \
+              | cat - Logs/automation_log.txt > Logs/tmp && mv Logs/tmp Logs/automation_log.txt
+          fi
+
+      # ------------------------------------------------------------
+      # Daily audit entry
+      # ------------------------------------------------------------
+      - name: Append daily audit entry
+        working-directory: BuildStatusNotifierApp
+        run: |
+          echo "$(date '+%Y-%m-%d %H:%M:%S') - Daily maintenance run completed" \
+            | cat - Logs/automation_log.txt > Logs/tmp && mv Logs/tmp Logs/automation_log.txt
+
+      # ------------------------------------------------------------
+      # Commit and push changes
+      # ------------------------------------------------------------
+      - name: Commit and push changes
+        working-directory: BuildStatusNotifierApp
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add Logs
+          git commit -m "Daily maintenance: retention, trimming, audit entry" || echo "No changes to commit"
+          git push

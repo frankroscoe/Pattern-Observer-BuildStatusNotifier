@@ -1,3 +1,17 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+# ================================================================
+#  Log Management and Promotion Workflow
+#  ---------------------------------------------------------------
+#  This workflow demonstrates operational hygiene in CI/CD:
+#    • Build and run the application to generate a fresh log file
+#    • Promote the newest log to a stable, tracked location
+#    • Maintain an automation audit trail (newest-first)
+#    • Archive older logs and prune stale archives
+#
+#  This file is intentionally written as a teaching artifact.
+# ================================================================
+
 name: Log Management and Promotion
 
 on:
@@ -17,41 +31,71 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
+      # ------------------------------------------------------------
+      # Build the application
+      # ------------------------------------------------------------
       - name: Build project
-        run: dotnet build BuildStatusNotifierApp/BuildStatusNotifierApp.csproj --configuration Debug
+        working-directory: BuildStatusNotifierApp
+        run: dotnet build BuildStatusNotifierApp.csproj --configuration Debug
 
+      # ------------------------------------------------------------
+      # Run the application to generate a new log file
+      # ------------------------------------------------------------
       - name: Run project to generate log
+        working-directory: BuildStatusNotifierApp
         run: |
-          dotnet build BuildStatusNotifierApp/BuildStatusNotifierApp.csproj --configuration Debug --no-incremental
-          dotnet run --no-build --project BuildStatusNotifierApp/BuildStatusNotifierApp.csproj
+          dotnet build BuildStatusNotifierApp.csproj --configuration Debug --no-incremental
+          dotnet run --no-build --project BuildStatusNotifierApp.csproj
 
+      # ------------------------------------------------------------
+      # Promote newest log to tracked Logs folder
+      # ------------------------------------------------------------
       - name: Promote newest log to tracked Logs folder
+        working-directory: BuildStatusNotifierApp
         run: |
-          mkdir -p BuildStatusNotifierApp/Logs
-          NEWEST_LOG=$(ls -t BuildStatusNotifierApp/bin/Debug/net8.0/Logs/log_*.txt | head -n 1)
-          cp "$NEWEST_LOG" BuildStatusNotifierApp/Logs/latest_log.txt
+          mkdir -p Logs
+          NEWEST_LOG=$(ls -t Logs/log_*.txt | head -n 1)
+          cp "$NEWEST_LOG" Logs/latest_log.txt
 
-          echo "$(date '+%Y-%m-%d %H:%M:%S') - Promoted log file: $(basename "$NEWEST_LOG")" >> BuildStatusNotifierApp/Logs/automation_log.txt
+          # Prepend audit entry (newest-first)
+          echo "$(date '+%Y-%m-%d %H:%M:%S') - Promoted log file: $(basename "$NEWEST_LOG")" \
+            | cat - Logs/automation_log.txt > Logs/tmp && mv Logs/tmp Logs/automation_log.txt
 
+      # ------------------------------------------------------------
+      # Archive logs older than 3 days
+      # ------------------------------------------------------------
       - name: Archive logs older than 3 days
+        working-directory: BuildStatusNotifierApp
         run: |
-          mkdir -p BuildStatusNotifierApp/Logs/archive
-          find BuildStatusNotifierApp/Logs -maxdepth 1 -name "log_*.txt" -mtime +3 -exec mv {} BuildStatusNotifierApp/Logs/archive/ \;
+          mkdir -p Logs/archive
+          find Logs -maxdepth 1 -name "log_*.txt" -mtime +3 -exec mv {} Logs/archive/ \;
+          COUNT=$(find Logs/archive -type f | wc -l)
 
-          COUNT=$(find BuildStatusNotifierApp/Logs/archive -type f | wc -l)
-          echo "$(date '+%Y-%m-%d %H:%M:%S') - Archived $COUNT old logs" >> BuildStatusNotifierApp/Logs/automation_log.txt
+          # Prepend audit entry
+          echo "$(date '+%Y-%m-%d %H:%M:%S') - Archived $COUNT old logs" \
+            | cat - Logs/automation_log.txt > Logs/tmp && mv Logs/tmp Logs/automation_log.txt
 
+      # ------------------------------------------------------------
+      # Delete archives older than 30 days
+      # ------------------------------------------------------------
       - name: Delete archives older than 30 days
+        working-directory: BuildStatusNotifierApp
         run: |
-          DELETED=$(find BuildStatusNotifierApp/Logs/archive -type f -mtime +30 | wc -l)
-          find BuildStatusNotifierApp/Logs/archive -type f -mtime +30 -delete
+          DELETED=$(find Logs/archive -type f -mtime +30 | wc -l)
+          find Logs/archive -type f -mtime +30 -delete
 
-          echo "$(date '+%Y-%m-%d %H:%M:%S') - Deleted $DELETED archived logs older than 30 days" >> BuildStatusNotifierApp/Logs/automation_log.txt
+          # Prepend audit entry
+          echo "$(date '+%Y-%m-%d %H:%M:%S') - Deleted $DELETED archived logs older than 30 days" \
+            | cat - Logs/automation_log.txt > Logs/tmp && mv Logs/tmp Logs/automation_log.txt
 
+      # ------------------------------------------------------------
+      # Commit and push log changes
+      # ------------------------------------------------------------
       - name: Commit and push changes
+        working-directory: BuildStatusNotifierApp
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git add BuildStatusNotifierApp/Logs
+          git add Logs
           git commit -m "Automated log promotion and maintenance" || echo "No changes to commit"
           git push
